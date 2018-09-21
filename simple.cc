@@ -16,6 +16,10 @@ using namespace std;
 
 NS_LOG_COMPONENT_DEFINE("LLTSimple");
 
+enum {
+  LLT_LOW_LATENCY = 20, // 000101 (00)
+};
+
 /**
  * Instantiates one UE and one application server.
  * Attach the UE to LTE using a bearer with configurable QCI.
@@ -93,11 +97,7 @@ int main(int argc, char* argv[]) {
   // https://tools.ietf.org/html/draft-you-tsvwg-latency-loss-tradeoff-00#section-4.4
   Ptr<EpcTft> tft = Create<EpcTft>();
   EpcTft::PacketFilter pf;
-  // pf.typeOfService = 0x14;  // 000101 (00)
-  // XXX Since it looks problematic setting the ToS bits on the UdpClient
-  // application, we set the filter on the port.
-  pf.localPortStart = 1234;
-  pf.localPortEnd = 1234;
+  pf.typeOfService = LLT_LOW_LATENCY;
   tft->Add(pf);
   lteHelper->ActivateDedicatedEpsBearer(
       UEDevice, EpsBearer(EpsBearer::NGBR_VOICE_VIDEO_GAMING), tft);
@@ -144,17 +144,20 @@ int main(int argc, char* argv[]) {
   ApplicationContainer recvApp = packetSinkHelper.Install(UE.Get(0));
   recvApp.Start(Seconds(0.01));
 
-  UdpClientHelper client(UEIpIface.GetAddress(0), dlPort);
   // simulate downstream real-time audio, specifically:
   // 64kbps PCM audio packetized in 20ms increments
-  // IP/UDP/RTP/PCM 20+8+12+160=200
-  // - required BW: 200 / 0.02 bytes/second = 80kbps
+  // IP/UDP/RTP/PCM 20+8+12+160=200, required BW is
+  // 200 / 0.02 bytes/second = 80kbps
+  UdpClientHelper client(UEIpIface.GetAddress(0), dlPort);
   // - packet size: 160 PCM + 12 RTP
-  // - packet rate: 20ms (50 pps)
   client.SetAttribute("PacketSize", UintegerValue(172));
+  // - packet rate: 20ms (50 pps)
   client.SetAttribute("Interval", TimeValue(MilliSeconds(20)));
   // Send for 10s at most
   client.SetAttribute("MaxPackets", UintegerValue(500));
+  // configure the LLT PHB codepoint for low-latency traffic
+  client.SetAttribute("ToS", UintegerValue(LLT_LOW_LATENCY));
+
   ApplicationContainer sendApp = client.Install(appServer.Get(0));
   sendApp.Start(Seconds(0.01));
 
