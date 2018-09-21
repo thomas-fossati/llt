@@ -133,15 +133,14 @@ int main(int argc, char* argv[]) {
   appServerStaticRouting->AddNetworkRouteTo(
       epcHelper->GetUeDefaultGatewayAddress(), Ipv4Mask("255.255.0.0"), 1);
 
-  // Application simulating downlink communication with an UdpClient
-  // application on the appServer and a PacketSink on the UE (use UDP port 1234,
-  // which will activate the dedicated bearer)
+  // Application simulating downlink communication using UDP client / server pair
+  // Client marks all outgoing packets with the LLT PHB codepoint for
+  // low-latency which should trigger a dedicated EPS bearer with low-latency QCI
+  // on LTE segment.
   uint16_t dlPort = 1234;
 
-  PacketSinkHelper packetSinkHelper(
-      "ns3::UdpSocketFactory",
-      InetSocketAddress(Ipv4Address::GetAny(), dlPort));
-  ApplicationContainer recvApp = packetSinkHelper.Install(UE.Get(0));
+  UdpServerHelper server(dlPort);
+  ApplicationContainer recvApp = server.Install(UE.Get(0));
   recvApp.Start(Seconds(0.01));
 
   // simulate downstream real-time audio, specifically:
@@ -159,7 +158,7 @@ int main(int argc, char* argv[]) {
   client.SetAttribute("ToS", UintegerValue(LLT_LOW_LATENCY));
 
   ApplicationContainer sendApp = client.Install(appServer.Get(0));
-  sendApp.Start(Seconds(0.01));
+  sendApp.Start(Seconds(0.02));
 
   // Dump PHY, MAC, RLC and PDCP level KPIs
   // lteHelper->EnablePhyTraces();
@@ -176,13 +175,16 @@ int main(int argc, char* argv[]) {
   // This is needed otherwise the simulation will last forever, because (among
   // others) the start-of-subframe event is scheduled repeatedly, and the ns-3
   // simulator scheduler will hence never run out of events.
-  Simulator::Stop(Seconds(10));
+  Simulator::Stop(Seconds(15));
 
   // Run the simulation
   Simulator::Run();
 
   // Cleanup and exit:
   Simulator::Destroy();
+
+  std::cout << server.GetServer()->GetReceived() << std::endl;
+  std::cout << server.GetServer()->GetLost() << std::endl;
 
   return 0;
 }
