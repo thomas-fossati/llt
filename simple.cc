@@ -145,6 +145,16 @@ int main(int argc, char* argv[]) {
   recvApp.Start(Seconds(0.01));
 
   UdpClientHelper client(UEIpIface.GetAddress(0), dlPort);
+  // simulate downstream real-time audio, specifically:
+  // 64kbps PCM audio packetized in 20ms increments
+  // IP/UDP/RTP/PCM 20+8+12+160=200
+  // - required BW: 200 / 0.02 bytes/second = 80kbps
+  // - packet size: 160 PCM + 12 RTP
+  // - packet rate: 20ms (50 pps)
+  client.SetAttribute("PacketSize", UintegerValue(172));
+  client.SetAttribute("Interval", TimeValue(MilliSeconds(20)));
+  // Send for 10s at most
+  client.SetAttribute("MaxPackets", UintegerValue(500));
   ApplicationContainer sendApp = client.Install(appServer.Get(0));
   sendApp.Start(Seconds(0.01));
 
