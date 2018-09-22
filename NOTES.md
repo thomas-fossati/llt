@@ -1,29 +1,4 @@
-
-TFT matches on LLT DSCP:
-
-```
-$ env NS_LOG="EpcTft:EpcTftClassifier" make run
-[...]
-+10.010000016s 0 EpcTftClassifier:Classify(0x1f998c8, 0x20b86d0, 200, DOWNLINK)
-+10.010000016s 0 EpcTftClassifier:Classify(): [INFO ] local address: 7.0.0.2 remote address: 1.0.0.2
-+10.010000016s 0 EpcTftClassifier:Classify(): [INFO ] Classifying packet: localAddr=7.0.0.2 remoteAddr=1.0.0.2 localPort=1234 remotePort=49153 tos=0x20
-+10.010000016s 0 EpcTftClassifier:Classify(): [LOGIC] TFT MAP size: 2
-+10.010000016s 0 EpcTftClassifier:Classify(): [LOGIC] TFT id: 2
-+10.010000016s 0 EpcTftClassifier:Classify(): [LOGIC]  Ptr<EpcTft>: 0x2001920
-+10.010000016s 0 EpcTft:Matches(0x2001920, DOWNLINK, 1.0.0.2, 7.0.0.2, , 49153, 1234, 20)
-+10.010000016s 0 EpcTft:Matches(0x2001ba0, DOWNLINK, 1.0.0.2, 7.0.0.2, 49153, 1234, 20)
-+10.010000016s 0 EpcTft:Matches(): [LOGIC] d matches
-+10.010000016s 0 EpcTft:Matches(): [LOGIC] ra matches
-+10.010000016s 0 EpcTft:Matches(): [LOGIC] ls matches
-+10.010000016s 0 EpcTft:Matches(): [LOGIC] rps matches
-+10.010000016s 0 EpcTft:Matches(): [LOGIC] rpe matches
-+10.010000016s 0 EpcTft:Matches(): [LOGIC] lps matches
-+10.010000016s 0 EpcTft:Matches(): [LOGIC] lpe matches
-+10.010000016s 0 EpcTft:Matches(): [LOGIC] tos matches --> have match!
-+10.010000016s 0 EpcTftClassifier:Classify(): [LOGIC] matches with TFT ID = 2
-```
-
-but I can't see any activation of a dedicated bearer happening as a result:
+I can see the activation of the dedicated bearer with QCI 7:
 ```
 $ env NS_LOG="LteHelper" make run
 [...]
@@ -38,12 +13,40 @@ $ env NS_LOG="LteHelper" make run
 +0.000000000s -1 LteHelper:DoComponentCarrierConfigure(0x149a970, 18100, 100, 25, 25)
 +0.000000000s -1 LteHelper:Attach(0x149a970)
 +0.000000000s -1 LteHelper:Attach(0x149a970)
-==> +0.000000000s -1 LteHelper:ActivateDedicatedEpsBearer(0x149a970)
-==> +0.000000000s -1 LteHelper:ActivateDedicatedEpsBearer(0x149a970)
++0.000000000s -1 LteHelper:ActivateDedicatedEpsBearer(0x149a970)
++0.000000000s -1 LteHelper:ActivateDedicatedEpsBearer(0x149a970)
++0.000000000s -1 LteHelper:ActivateDedicatedEpsBearer(): [INFO ] dedicated EPS bearer (2) with QCI 7 activated
 +0.000000000s -1 LteHelper:EnableDlPhyTraces()
 +0.000000000s -1 LteHelper:EnableUlPhyTraces()
 +0.000000000s -1 LteHelper:EnableDlMacTraces()
 +0.000000000s -1 LteHelper:EnableUlMacTraces()
 ```
+Somewhat surprisingly, this happens at attachment.  For some reason I was expecting it to be triggered by the TFT match.
 
-Note that the two ActivateDedicatedEpsBearer calls correspond, in fact, to one logical activation of the default bearer which happens at attachment (+0.00000000s).
+
+I also observe TFT matches on LLT DSCP, which is good:
+
+```
+$ env NS_LOG="EpcTft:EpcTftClassifier" make run
+[...]
++9.990000016s 0 EpcSgwPgwApplication:RecvFromTunDevice(0x2527200, 03-06-00:00:00:00:00:01, 03-06-ff:ff:ff:ff:ff:ff, 0x266db20, 200)
++9.990000016s 0 EpcSgwPgwApplication:RecvFromTunDevice(): [LOGIC] packet addressed to UE 7.0.0.2
++9.990000016s 0 EpcSgwPgwApplication:Classify(0x25358b0, 0x266db20)
++9.990000016s 0 EpcTftClassifier:Classify(0x25358b8, 0x266db20, 200, DOWNLINK)
++9.990000016s 0 EpcTftClassifier:Classify(): [INFO ] local address: 7.0.0.2 remote address: 1.0.0.2
++9.990000016s 0 EpcTftClassifier:Classify(): [INFO ] Classifying packet: localAddr=7.0.0.2 remoteAddr=1.0.0.2 localPort=1234 remotePort=49153 tos=0x20
++9.990000016s 0 EpcTftClassifier:Classify(): [LOGIC] TFT MAP size: 2
++9.990000016s 0 EpcTftClassifier:Classify(): [LOGIC] TFT id: 2
++9.990000016s 0 EpcTftClassifier:Classify(): [LOGIC]  Ptr<EpcTft>: 0x259d9e0
++9.990000016s 0 EpcTft:Matches(0x259d9e0, DOWNLINK, 1.0.0.2, 7.0.0.2, , 49153, 1234, 20)
++9.990000016s 0 EpcTft:Matches(0x259dc60, DOWNLINK, 1.0.0.2, 7.0.0.2, 49153, 1234, 20)
+
++9.990000016s 0 EpcTft:Matches(): [LOGIC] ls matches
++9.990000016s 0 EpcTft:Matches(): [LOGIC] rps matches
++9.990000016s 0 EpcTft:Matches(): [LOGIC] rpe matches
++9.990000016s 0 EpcTft:Matches(): [LOGIC] lps matches
++9.990000016s 0 EpcTft:Matches(): [LOGIC] lpe matches
++9.990000016s 0 EpcTft:Matches(): [LOGIC] tos matches --> have match!
++9.990000016s 0 EpcTftClassifier:Classify(): [LOGIC] matches with TFT ID = 2
++9.990000016s 0 EpcSgwPgwApplication:SendToS1uSocket(0x2527200, 0x266db20, 10.0.0.5, 2) <== TEID:2
+```
