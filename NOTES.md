@@ -50,3 +50,5 @@ $ env NS_LOG="EpcTft:EpcTftClassifier" make run
 +9.990000016s 0 EpcTftClassifier:Classify(): [LOGIC] matches with TFT ID = 2
 +9.990000016s 0 EpcSgwPgwApplication:SendToS1uSocket(0x2527200, 0x266db20, 10.0.0.5, 2) <== TEID:2
 ```
+
+This means the downlink traffic originating from my UDP sender is carried over the dedicated low-delay bearer rather than the default one.
