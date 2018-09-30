@@ -26,23 +26,18 @@ int
 main (int argc, char *argv[])
 {
   bool markingEnabled = true;
-  std::string runId;
-  std::string experiment ("lola-simple-test");
-  std::string strategy ("lola-");
+  std::string runId = "run-" + std::to_string (time (NULL));
+  std::string experiment ("loss latency tradeoff");
+  std::string strategy ("single-ue");
   std::string input;
-
-  {
-    std::stringstream sstr;
-    sstr << "run-" << time (NULL);
-    runId = sstr.str ();
-  }
 
   // Set up command line parameters used to control the experiment.
   CommandLine cmd;
-  cmd.AddValue ("experiment", "Identifier for experiment.", experiment);
-  cmd.AddValue ("strategy", "Identifier for strategy.", strategy);
-  cmd.AddValue ("run", "Identifier for run.", runId);
-  cmd.AddValue ("marking-enabled", "Whether LLT marking is enabled on the real-time flow.",
+  cmd.AddValue ("experiment", "study of which this trial is a member", experiment);
+  cmd.AddValue ("strategy", "code or parameters being examined in this trial", strategy);
+  cmd.AddValue ("run", "unique identifier for this trial for identification in later analysis",
+                runId);
+  cmd.AddValue ("marking-enabled", "whether the LLT marking is enabled on the real-time flow(s).",
                 markingEnabled);
   cmd.Parse (argc, argv);
 
@@ -54,11 +49,11 @@ main (int argc, char *argv[])
 
   // This will instantiate some common objects (e.g., the Channel object) and
   // provide the methods to add eNBs and UEs and configure them.
-  Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
+  auto lteHelper = CreateObject<LteHelper> ();
 
   // Create EPC entities (PGW & friends) and a point-to-point network topology
   // Also tell the LTE helper that the EPC will be used
-  Ptr<PointToPointEpcHelper> epcHelper = CreateObject<PointToPointEpcHelper> ();
+  auto epcHelper = CreateObject<PointToPointEpcHelper> ();
   lteHelper->SetEpcHelper (epcHelper);
 
   // Create Node object for the eNodeB
@@ -84,23 +79,19 @@ main (int argc, char *argv[])
   mobility.Install (UE);
 
   // Install an LTE protocol stack on the eNB
-  NetDeviceContainer eNBDevice;
-  eNBDevice = lteHelper->InstallEnbDevice (eNB);
+  auto eNBDevice = lteHelper->InstallEnbDevice (eNB);
 
   // Install an LTE protocol stack on the UEs
-  NetDeviceContainer UEDevice;
-  UEDevice = lteHelper->InstallUeDevice (UE);
+  auto UEDevice = lteHelper->InstallUeDevice (UE);
 
   // Install the IP protocol stack on the UE
   InternetStackHelper IPStack;
   IPStack.Install (UE);
 
-  Ipv4InterfaceContainer UEIpIface =
-      epcHelper->AssignUeIpv4Address (NetDeviceContainer (UEDevice.Get (0)));
+  auto UEIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (UEDevice.Get (0)));
   // Set the default gateway for the UE
   Ipv4StaticRoutingHelper ipv4RoutingHelper;
-  Ptr<Ipv4StaticRouting> ueStaticRouting =
-      ipv4RoutingHelper.GetStaticRouting (UE.Get (0)->GetObject<Ipv4> ());
+  auto ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (UE.Get (0)->GetObject<Ipv4> ());
   ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
   // Attach the UE to an eNB. This will configure the UE according to the eNB
@@ -108,12 +99,10 @@ main (int argc, char *argv[])
   // A side-effect of this call is to activate the default bearer.
   lteHelper->Attach (UEDevice, eNBDevice.Get (0));
 
-  NS_LOG_INFO ("Set up dedicated bearer (QCI=7) with LLT-specific TFT");
-
   // Add a dedicated low-latency bearer for applications marking
   // their traffic with the LLT PHB codepoint for low-latency traffic
   // https://tools.ietf.org/html/draft-you-tsvwg-latency-loss-tradeoff-00#section-4.4
-  Ptr<EpcTft> tft = Create<EpcTft> ();
+  auto tft = Create<EpcTft> ();
   EpcTft::PacketFilter pf;
   pf.typeOfService = LLT_LOW_LATENCY;
   pf.typeOfServiceMask = LLT_LOW_LATENCY;
@@ -128,23 +117,23 @@ main (int argc, char *argv[])
 
   // Create the SGiLAN as a point-to-point topology between the PGW and the
   // application server
-  // - capacity: 100Gb/s
+  // - capacity: 10Gb/s
   // - MTU: 1500 bytes
-  // - propagation delay: 0.01s
+  // - propagation delay: 1ms
   PointToPointHelper SGiLAN;
   SGiLAN.SetDeviceAttribute ("Mtu", UintegerValue (1500));
   SGiLAN.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("10Gb/s")));
   SGiLAN.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (1)));
 
-  NetDeviceContainer SGiLANDevices = SGiLAN.Install (epcHelper->GetPgwNode (), appServer.Get (0));
+  auto SGiLANDevices = SGiLAN.Install (epcHelper->GetPgwNode (), appServer.Get (0));
 
   Ipv4AddressHelper ipv4h;
   ipv4h.SetBase ("1.0.0.0", "255.0.0.0");
-  Ipv4InterfaceContainer SGiLANIpIfaces = ipv4h.Assign (SGiLANDevices);
+  auto SGiLANIpIfaces = ipv4h.Assign (SGiLANDevices);
   // interface 0 is localhost, 1 is the point-to-point device
   // Ipv4Address appServerAddr = SGiLANIpIfaces.GetAddress(1);
 
-  Ptr<Ipv4StaticRouting> appServerStaticRouting =
+  auto appServerStaticRouting =
       ipv4RoutingHelper.GetStaticRouting (appServer.Get (0)->GetObject<Ipv4> ());
   appServerStaticRouting->AddNetworkRouteTo (epcHelper->GetUeDefaultGatewayAddress (),
                                              Ipv4Mask ("255.255.0.0"), 1);
@@ -211,11 +200,10 @@ main (int argc, char *argv[])
   // Add any information we wish to record about this run.
   data.AddMetadata ("LLT", uint32_t (markingEnabled));
   // use millisec granularity (See RealtimeReceiver classe)
-  auto delayStat = CreateObject<MinMaxAvgTotalCalculator<int64_t>> ();
-  delayStat->SetKey ("RT app delay (ms)");
-  delayStat->SetContext (".");
-  receiver->SetDelayTracker (delayStat);
-  data.AddDataCalculator (delayStat);
+  auto rtAppDelayStat = CreateObject<MinMaxAvgTotalCalculator<int64_t>> ();
+  rtAppDelayStat->SetKey ("real time app delay (ms)");
+  receiver->SetDelayTracker (rtAppDelayStat);
+  data.AddDataCalculator (rtAppDelayStat);
 
   // Downlink pipe filler, no marking whatsoever
   uint16_t dlGreedyPort = 5687;
@@ -224,24 +212,18 @@ main (int argc, char *argv[])
   // MaxBytes==0 means send as much as possible until stopped
   greedySender.SetAttribute ("MaxBytes", UintegerValue (0));
   greedySender.SetAttribute ("SendSize", UintegerValue (8192));
-  ApplicationContainer greedySenderApp = greedySender.Install (appServer.Get (0));
+  auto greedySenderApp = greedySender.Install (appServer.Get (0));
   greedySenderApp.Start (Seconds (0.02));
 
   PacketSinkHelper greedyReceiver ("ns3::TcpSocketFactory",
                                    InetSocketAddress (Ipv4Address::GetAny (), dlGreedyPort));
-  ApplicationContainer greedyReceiverApp = greedyReceiver.Install (UE.Get (0));
+  auto greedyReceiverApp = greedyReceiver.Install (UE.Get (0));
   greedyReceiverApp.Start (Seconds (0.01));
 
   // Dump PHY, MAC, RLC and PDCP level KPIs
-  // lteHelper->EnablePhyTraces();
-  // lteHelper->EnableMacTraces();
-  // lteHelper->EnableRlcTraces();
-  // lteHelper->EnablePdcpTraces();
   lteHelper->EnableTraces ();
-
+  // Get pcaps from the EPC and the SGi
   SGiLAN.EnablePcapAll ("llt");
-  AsciiTraceHelper ascii;
-  SGiLAN.EnableAsciiAll (ascii.CreateFileStream ("llt.tr"));
 
   // Set the stop time.
   // This is needed otherwise the simulation will last forever, because (among
