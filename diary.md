@@ -104,6 +104,6 @@ Liar gets -27.5% throughput (honest gets a 18.85% boost as a consequence)
 
 A throughput seeking flow that marks itself inconsistently is heavily penalised
 due to the increase in packet loss (basically, QCI 7's delay and packet drop
-budgets are not compatible with the dynamics of a buffer hungry TCP flow).
+budgets are not compatible with the dynamics of a bandwidth hungry TCP flow).
 The aggregate throughput decreases, but because non-honest markers have no
 incentives, this is not a real problem.
