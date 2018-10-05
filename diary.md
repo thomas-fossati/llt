@@ -87,7 +87,8 @@ Control and experimental group are as follows:
 | CTL | 24       | 25
 | EXP | 31       | 140
 
-Liar ends up retransmitting a lot more (+460%) decreased throughput
+Liar ends up retransmitting a lot more (+460%) which implies a substantial
+decrease in throughput:
 
 - TCP flow throughput (Mbps)
 
@@ -97,7 +98,6 @@ Liar ends up retransmitting a lot more (+460%) decreased throughput
 | EXP | 2.399816 | 1.332176
 
 Liar gets -27.5% throughput (honest gets a 18.85% boost as a consequence)
-
 
 ### Summary
 
