@@ -32,7 +32,8 @@ Two concurrent applications on the UE, resulting in two downlink flows.
 Control and experimental group are as follows:
 
 - control (CTL): no marking
-- experimental (EXP): LLT marking applied to the real-time traffic (i.e., honest marking)
+- experimental (EXP): LLT marking applied to the real-time traffic (i.e.,
+  honest marking)
   
 ### Results
 
@@ -75,8 +76,8 @@ Two concurrent downloads on the UE, i.e. two TCP greedy sender (non application 
 Control and experimental group are as follows:
 
 - control (CTL): no marking
-- experimental (EXP): TFT configured to route one of the flows (the liar) to
-  port 5688 onto the low-latency bearer
+- experimental (EXP): TFT configured to route one of the flows (the liar, on
+  port 5688) onto the low-latency dedicated bearer
   
 ### Results
 
