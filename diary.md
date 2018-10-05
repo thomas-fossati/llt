@@ -60,6 +60,11 @@ CTL->EXP: +0%
 
 CTL->EXP: -0.39%
 
+### Summary
+
+Increased stability of the real-time flow with minimal decrease in efficiency
+of the throughput seeking flow (and therefore of the RAN as a whole).
+
 ## Experiment two: the liar
 
 Two concurrent downloads on the UE, i.e. two TCP greedy sender (non application limited)
@@ -67,9 +72,10 @@ Two concurrent downloads on the UE, i.e. two TCP greedy sender (non application 
 Control and experimental group are as follows:
 
 - control (CTL): no marking
-- experimental (EXP): TFT configured to route the flow to port 5688 onto the low-latency bearer
+- experimental (EXP): TFT configured to route one of the flows (the liar) to
+  port 5688 onto the low-latency bearer
   
-## Results
+### Results
 
 - retransmission
 
@@ -89,5 +95,11 @@ Liar ends up retransmitting a lot more (+460%) decreased throughput
 
 Liar gets -27.5% throughput (honest gets a 18.85% boost as a consequence)
 
-Note that aggregate throughput decreases, but because there is no incentive for
-the liar to lie, this is not a real problem.
+
+### Summary
+
+A throughput seeking flow that marks itself inconsistently is heavily penalised
+due to the increase in packet loss (basically, QCI 7's delay and packet drop
+budgets are not compatible with the dynamics of a buffer hungry TCP flow).
+The aggregate throughput decreases, but because non-honest markers have no
+incentives, this is not a real problem.
