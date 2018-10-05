@@ -10,9 +10,11 @@
 LTE-uu:
   - FDD SISO, 6 RB (i.e., nominal downlink peak at 4.4Mbps)
   - (measured) baseline latency: ~3ms
+
 S1/S5/S8:
   - data rate: 5Mbps
   - propagation latency: 0ms
+
 SGi:
   - data rate: 10Gbps (basically unlimited)
   - propagation latency: 1ms
