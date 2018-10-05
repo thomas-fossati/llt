@@ -19,6 +19,9 @@ SGi:
   - data rate: 10Gbps (basically unlimited)
   - propagation latency: 1ms
 
+eNB:
+  - proportional fair MAC scheduler
+
 ## Experiment one: the honest marker
 
 Two concurrent applications on the UE, resulting in two downlink flows.
